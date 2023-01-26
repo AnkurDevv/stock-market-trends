@@ -1,9 +1,17 @@
 import './App.css';
+import Header from './components/Layout/Header';
+import StockDataTable from './components/StockDataTable';
 
 function App() {
   return (
-   <h1 className='text-center'>something</h1>
+  <>
+  <Header/>
+  <main>
+   <StockDataTable/>
+  </main>
+  </>
   );
 }
 
 export default App;
+
