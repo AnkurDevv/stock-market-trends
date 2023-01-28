@@ -5,10 +5,12 @@ import StockDataTable from './components/StockDataTable';
 function App() {
   return (
   <>
+  <div className='mainWrapper'>
   <Header/>
   <main>
    <StockDataTable/>
   </main>
+  </div>
   </>
   );
 }
