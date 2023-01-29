@@ -23,6 +23,18 @@ const StockDataTable = () => {
      alert(`price is ${val}`);
    }
 
+  const isLimitedReached = (data) =>{
+   if (data['Note']) {
+     setApiResponseStatus(
+       'Sorry It seems like you have reached the number of request allowed for this minute. Please try reloading application again in a few seconds'
+     )
+     setIsLoading(false);
+     return true;
+   }
+   setApiResponseStatus('');
+   return false;
+  }
+
   async function fetchStockData(symbol) {
     setIsLoading(true)
     try {
@@ -33,18 +45,18 @@ const StockDataTable = () => {
         alert('something wrong with request')
       }
       const data = await response.json();
-      console.log(data['Note']);
-      if(data['Note']){
-       console.log("reaching here or not ")
-       setApiResponseStatus('Sorry It seems like you have reached the number of request allowed for this minute. Please try reloading application again in a few seconds');
-       setIsLoading(false);
+      const apiLimitStatus = isLimitedReached(data);
+      if(apiLimitStatus){
        return;
-      }else{
-       setApiResponseStatus('');
       }
-      // console.log(data['Note']);
+      // transforming data we are getting into something easier to work with
+      const transFormedData = {
+        symbol: data['Global Quote']['01. symbol'],
+        openPrice: data['Global Quote']['02. open'],
+        price: data['Global Quote']['05. price']
+      }
       setStockList((prevState) => {
-        return [...prevState, data['Global Quote']]
+        return [...prevState, transFormedData]
       })
       setIsLoading(false)
     } catch (error) {
@@ -60,7 +72,6 @@ const StockDataTable = () => {
      })
    }, [symbols])
    
-  console.log(stockList);
   return (
     <>
       {apiResonseStatus && <p className={classes.apiStatusText}>{apiResonseStatus}</p>}
@@ -70,7 +81,7 @@ const StockDataTable = () => {
           <div
             className={`d-flex justify-content-center ${classes.tableWrapper}`}
           >
-            <table className='table'>
+            <table className='table table-hover'>
               <thead>
                 <tr>
                   <th scope='col'>Symbol</th>
@@ -82,10 +93,10 @@ const StockDataTable = () => {
                 {stockList.map((stock) => {
                   return (
                     <StockDataRow
-                      key={stock['01. symbol']}
-                      symbol={stock['01. symbol']}
-                      openPrice={stock['02. open']}
-                      currentPrice={stock['05. price']}
+                      key={stock['symbol']}
+                      symbol={stock['symbol']}
+                      openPrice={stock['openPrice']}
+                      currentPrice={stock['price']}
                       priceAlert={priceAlertHandler}
                     />
                   )
