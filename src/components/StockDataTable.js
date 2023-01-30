@@ -1,6 +1,7 @@
 import classes from './StockDataTable.module.css'
 import { useEffect, useState } from 'react'
 import StockDataRow from './StockDataRow'
+import InfoGraphic from './InfoGraphic'
 
 const API_KEY = 'OC9391V0N1Z6NO9H'
 
@@ -105,6 +106,7 @@ const StockDataTable = () => {
             </table>
           </div>
         )}
+        <InfoGraphic/>
     </>
   )
 }
