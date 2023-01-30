@@ -1,5 +1,4 @@
 const StockDataRow = (props) => {
-  console.log(props)
   return (
     <tr>
       <td>{props.symbol}</td>
