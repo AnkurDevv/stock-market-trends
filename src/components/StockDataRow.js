@@ -1,9 +1,10 @@
 const StockDataRow = (props) => {
   return (
-    <tr>
+    <tr className={Math.sign(props.netChange) === -1 ? 'table-danger':'table-success'}>
       <td>{props.symbol}</td>
       <td>{props.openPrice}</td>
-      <td onClick={props.priceAlert}>{props.currentPrice}</td>
+      <td>{props.closePrice}</td>
+      <td>{props.netChange}</td>
     </tr>
   )
 }

@@ -16,7 +16,8 @@ const StockDataTable = () => {
   const [symbols, setSymbol] = useState([
     'TSLA',
     'RIVN',
-    'LCID'
+    'LCID',
+    'AUR'
   ]) // default symbol
 
    function priceAlertHandler(event) {
@@ -34,6 +35,56 @@ const StockDataTable = () => {
    }
    setApiResponseStatus('');
    return false;
+  }
+
+  async function getStockPricesWeekly(symbol) {
+    const response = await fetch(
+      `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol=${symbol}&apikey=${API_KEY}`
+    )
+    const data = await response.json()
+    const apiLimitStatus = isLimitedReached(data)
+    if (apiLimitStatus) {
+      return
+    }
+    console.log(data)
+    const weeklyData = data['Weekly Adjusted Time Series']
+
+    // const symbol = data['Meta Data']['2. Symbol']
+
+    const dates = Object.keys(weeklyData)
+    const lstWeekTradeDate = dates[1]
+
+    console.log(lstWeekTradeDate)
+
+    const lstWeekfirstTradePrice = parseFloat(
+      weeklyData[lstWeekTradeDate]['1. open']
+    ).toFixed(2);
+    const lstWeekLastTradePrice = parseFloat(
+      weeklyData[lstWeekTradeDate]['4. close']
+    ).toFixed(2);
+    const lstWeekNetChange = parseFloat(
+      lstWeekLastTradePrice - lstWeekfirstTradePrice
+    ).toFixed(2);
+
+    console.log(typeof lstWeekLastTradePrice)
+
+    // transforming data we are getting into something easier to work with
+    const transFormedData = {
+      symbol: symbol,
+      openPrice: lstWeekfirstTradePrice,
+      closePrice: lstWeekLastTradePrice,
+      netChange: lstWeekNetChange,
+    }
+    setStockList((prevState) => {
+      return [...prevState, transFormedData]
+    })
+
+    // return {
+    //   firstTradeDate,
+    //   firstTradePrice,
+    //   sevenDaysAgoPrice,
+    //   lastTradePrice,
+    // }
   }
 
   async function fetchStockData(symbol) {
@@ -67,46 +118,54 @@ const StockDataTable = () => {
     }
   }
    
+   // useEffect(() => {
+   //   symbols.forEach((symbol) => {
+   //     fetchStockData(symbol)
+   //   })
+   // }, [symbols])
+
    useEffect(() => {
      symbols.forEach((symbol) => {
-       fetchStockData(symbol)
+       getStockPricesWeekly(symbol)
      })
    }, [symbols])
    
   return (
     <>
-      {apiResonseStatus && <p className={classes.apiStatusText}>{apiResonseStatus}</p>}
+      {apiResonseStatus && (
+        <p className={classes.apiStatusText}>{apiResonseStatus}</p>
+      )}
       {isloading && <p className={classes.isLoadingTxt}>Loading...</p>}
-      {!isloading &&
-        !apiResonseStatus && (
-          <div
-            className={`d-flex justify-content-center ${classes.tableWrapper}`}
-          >
-            <table className='table table-hover'>
-              <thead>
-                <tr>
-                  <th scope='col'>Symbol</th>
-                  <th scope='col'>Open Price</th>
-                  <th scope='col'>Current Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stockList.map((stock) => {
-                  return (
-                    <StockDataRow
-                      key={stock['symbol']}
-                      symbol={stock['symbol']}
-                      openPrice={stock['openPrice']}
-                      currentPrice={stock['price']}
-                      priceAlert={priceAlertHandler}
-                    />
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <InfoGraphic/>
+      {!isloading && !apiResonseStatus && (
+        <div
+          className={`d-flex justify-content-center ${classes.tableWrapper}`}
+        >
+          <table className='table table-hover table-bordered'>
+            <thead>
+              <tr>
+                <th scope='col'>Symbol</th>
+                <th scope='col'>Open Price</th>
+                <th scope='col'>Closed Price</th>
+                <th scope='col'>Net Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stockList.map((stock) => {
+                return (
+                  <StockDataRow
+                    key={stock['symbol']}
+                    symbol={stock['symbol']}
+                    openPrice={stock['openPrice']}
+                    closePrice={stock['closePrice']}
+                    netChange={stock['netChange']}
+                  />
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <InfoGraphic />
     </>
   )
 }
