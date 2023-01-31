@@ -12,18 +12,12 @@ const StockDataTable = () => {
   const [isloading, setIsLoading] = useState(false);
   const [apiResonseStatus, setApiResponseStatus] = useState('');
   const [isError, setIsError] = useState(null);
+  const [stockLineChartData, setStockLineChartData] = useState(null);
 
   const [symbols, setSymbol] = useState([
     'TSLA',
-    'RIVN',
-    'LCID',
-    'AUR'
+    'LCID'
   ]) // default symbol
-
-   function priceAlertHandler(event) {
-     let val = event.target.innerText
-     alert(`price is ${val}`);
-   }
 
   const isLimitedReached = (data) =>{
    if (data['Note']) {
@@ -35,6 +29,36 @@ const StockDataTable = () => {
    }
    setApiResponseStatus('');
    return false;
+  }
+
+  async function setLineChartData(symbol){
+   console.log(symbol);
+    const response = await fetch(
+      `https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol=${symbol}&apikey=${API_KEY}`
+    )
+    const data = await response.json()
+    const apiLimitStatus = isLimitedReached(data)
+    if (apiLimitStatus) {
+      return
+    }
+    const weeklyData = data['Weekly Adjusted Time Series']
+    //Getting Value for stock Line Chart
+    const dates = Object.keys(weeklyData);
+    const oneWeekAgo = dates[1];
+    const twoWeekAgo = dates[2];
+    const threeWeekAgo = dates[3];
+    const fourWeekAgo = dates[4];
+    const fiveWeekAgo = dates[5];
+
+    setStockLineChartData([
+      { date: oneWeekAgo, price: weeklyData[oneWeekAgo]['2. high'] },
+      { date: twoWeekAgo, price: weeklyData[twoWeekAgo]['2. high'] },
+      { date: threeWeekAgo, price: weeklyData[threeWeekAgo]['2. high'] },
+      { date: fourWeekAgo, price: weeklyData[fourWeekAgo]['2. high'] },
+      { date: fiveWeekAgo, price: weeklyData[fiveWeekAgo]['2. high'] },
+    ]) 
+
+    console.log(stockLineChartData)
   }
 
   async function getStockPricesWeekly(symbol) {
@@ -58,15 +82,13 @@ const StockDataTable = () => {
 
     const lstWeekfirstTradePrice = parseFloat(
       weeklyData[lstWeekTradeDate]['1. open']
-    ).toFixed(2);
+    ).toFixed(2)
     const lstWeekLastTradePrice = parseFloat(
       weeklyData[lstWeekTradeDate]['4. close']
-    ).toFixed(2);
+    ).toFixed(2)
     const lstWeekNetChange = parseFloat(
       lstWeekLastTradePrice - lstWeekfirstTradePrice
-    ).toFixed(2);
-
-    console.log(typeof lstWeekLastTradePrice)
+    ).toFixed(2)
 
     // transforming data we are getting into something easier to work with
     const transFormedData = {
@@ -79,57 +101,21 @@ const StockDataTable = () => {
       return [...prevState, transFormedData]
     })
 
-    // return {
-    //   firstTradeDate,
-    //   firstTradePrice,
-    //   sevenDaysAgoPrice,
-    //   lastTradePrice,
-    // }
+    //Getting Value for stock Line Chart
+    
   }
-
-  async function fetchStockData(symbol) {
-    setIsLoading(true)
-    try {
-      const response = await fetch(
-        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`
-      )
-      if (!response.ok) {
-        alert('something wrong with request')
-      }
-      const data = await response.json();
-      const apiLimitStatus = isLimitedReached(data);
-      if(apiLimitStatus){
-       return;
-      }
-      // transforming data we are getting into something easier to work with
-      const transFormedData = {
-        symbol: data['Global Quote']['01. symbol'],
-        openPrice: data['Global Quote']['02. open'],
-        price: data['Global Quote']['05. price']
-      }
-      setStockList((prevState) => {
-        return [...prevState, transFormedData]
-      })
-      setIsLoading(false)
-    } catch (error) {
-      setIsLoading(false)
-      setIsError(error);
-      console.log(isError)
-    }
-  }
-   
-   // useEffect(() => {
-   //   symbols.forEach((symbol) => {
-   //     fetchStockData(symbol)
-   //   })
-   // }, [symbols])
 
    useEffect(() => {
      symbols.forEach((symbol) => {
        getStockPricesWeekly(symbol)
      })
-   }, [symbols])
-   
+    }, [symbols])
+
+    // useEffect(()=>{
+    //  setLineChartData('TSLA')
+    // },[])
+    
+    
   return (
     <>
       {apiResonseStatus && (
@@ -158,6 +144,7 @@ const StockDataTable = () => {
                     openPrice={stock['openPrice']}
                     closePrice={stock['closePrice']}
                     netChange={stock['netChange']}
+                    showChart={setLineChartData}
                   />
                 )
               })}
@@ -165,7 +152,7 @@ const StockDataTable = () => {
           </table>
         </div>
       )}
-      <InfoGraphic />
+      {!isloading && !apiResonseStatus && stockLineChartData && <InfoGraphic stockData={stockLineChartData} />} 
     </>
   )
 }
