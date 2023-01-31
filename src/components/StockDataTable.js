@@ -58,7 +58,6 @@ const StockDataTable = () => {
       { date: fiveWeekAgo, price: weeklyData[fiveWeekAgo]['2. high'] },
     ]) 
 
-    console.log(stockLineChartData)
   }
 
   async function getStockPricesWeekly(symbol) {
